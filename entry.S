@@ -51,3 +51,44 @@
       movl %edx, %ds;           \
       movl %edx, %es
 
+#define RESTORE_ALL \
+      popl %ebx; \
+      popl %ecx; \
+      popl %edx; \
+      popl %esi; \
+      popl %edi; \
+      popl %ebp; \
+      popl %eax; \
+      popl %ds; \
+      popl %es; \
+      popl %fs; \
+      popl %gs
+
+#define EOI \
+      movb $0x20, %al; \
+      outb %al, $0x20
+
+
+ENTRY(keyboard_handler)
+	SAVE_ALL
+	EOI
+	call keyboard_routine
+	RESTORE_ALL
+	iret
+
+
+ENTRY(system_call_handler)
+	SAVE_ALL
+	// check si es una funcio
+	cmpl $0, %eax
+	jl error
+	cmpl $MAX_SYSCALL, %eax
+	jg error
+	call *sys_call_table(, %eax, 4)
+	jmp end
+error:	
+	movl $-38, %eax
+end:
+	movl %eax, 0x18(%esp)
+	RESTORE_ALL
+	iret

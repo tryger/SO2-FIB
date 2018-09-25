@@ -45,3 +45,20 @@ int sys_fork()
 void sys_exit()
 {  
 }
+
+
+int sys_write(int fd, char* buffer, int size)
+{
+	int ret;
+	
+	if ((ret = check_fd(fd, ESCRIPTURA)))
+		return ret;
+	
+       	if (buffer == NULL)
+		return -14; /* EFAULT */
+
+	if (size < 0)
+		return -27; /* EFBIG ??? */
+
+	return sys_write_console(buffer, size);
+}
