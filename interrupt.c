@@ -7,6 +7,7 @@
 #include <hardware.h>
 #include <io.h>
 #include <entry.h>
+#include <system.h>
 
 #include <zeos_interrupt.h>
 
@@ -83,12 +84,20 @@ void setIdt()
   
   set_handlers();
   setInterruptHandler(33, keyboard_handler, 0);
+  setInterruptHandler(32, clock_handler, 0);
 
   setTrapHandler(0x80, system_call_handler, 3);
 
   /* ADD INITIALIZATION CODE FOR INTERRUPT VECTOR */
 
   set_idt_reg(&idtR);
+}
+
+void setMsr()
+{
+	writeMSR(0x174, __KERNEL_CS);
+	writeMSR(0x175, INITIAL_ESP);
+	writeMSR(0x176, (int)syscall_handler_sysenter);
 }
 
 
@@ -108,4 +117,11 @@ void keyboard_routine()
 
 		printc_xy(0, 0, c);
 	}
+}
+
+void clock_routine()
+{
+	zeos_ticks++;
+
+	zeos_show_clock();
 }

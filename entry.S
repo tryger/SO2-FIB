@@ -69,6 +69,23 @@
       outb %al, $0x20
 
 
+ENTRY(writeMSR)
+	pushl %ebp
+	movl %esp, %ebp
+	
+	movl 8(%ebp), %ecx
+	movl 12(%ebp), %eax
+	xor %edx, %edx
+	
+	wrmsr
+
+	movl %ebp, %esp
+	popl %ebp
+
+	ret
+
+
+
 ENTRY(keyboard_handler)
 	SAVE_ALL
 	EOI
@@ -76,7 +93,7 @@ ENTRY(keyboard_handler)
 	RESTORE_ALL
 	iret
 
-
+// UNUSED
 ENTRY(system_call_handler)
 	SAVE_ALL
 	// check si es una funcio
@@ -90,5 +107,45 @@ error:
 	movl $-38, %eax
 end:
 	movl %eax, 0x18(%esp)
+	RESTORE_ALL
+	iret
+
+
+ENTRY(syscall_handler_sysenter)
+	push $__USER_DS
+	push %ebp
+	pushfl
+	push $__USER_CS
+	push 4(%ebp)
+	SAVE_ALL
+
+	cmpl $0, %eax
+	jl sysenter_err
+	cmpl $MAX_SYSCALL, %eax
+	jg sysenter_err
+
+	call *sys_call_table(, %eax, 4)
+	jmp sysenter_fin
+
+sysenter_err:
+	movl $-38, %eax // ENOSYS
+
+sysenter_fin:
+	movl %eax, 0x18(%esp)
+
+	RESTORE_ALL
+
+	movl (%esp), %edx
+
+	movl 12(%esp), %ecx
+	sti
+
+	sysexit
+
+
+ENTRY(clock_handler)
+	SAVE_ALL
+	EOI
+	call clock_routine
 	RESTORE_ALL
 	iret

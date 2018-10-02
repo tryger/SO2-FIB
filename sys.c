@@ -13,6 +13,8 @@
 
 #include <sched.h>
 
+#include <system.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 
@@ -61,4 +63,9 @@ int sys_write(int fd, char* buffer, int size)
 		return -27; /* EFBIG ??? */
 
 	return sys_write_console(buffer, size);
+}
+
+int sys_gettime()
+{
+	return zeos_ticks;
 }
