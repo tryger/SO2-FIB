@@ -15,14 +15,17 @@ union task_union protected_tasks[NR_TASKS+2]
 
 union task_union *task = &protected_tasks[1]; /* == union task_union task[NR_TASKS] */
 
-#if 0
 struct task_struct *list_head_to_task_struct(struct list_head *l)
 {
   return list_entry( l, struct task_struct, list);
 }
-#endif
 
 extern struct list_head blocked;
+struct list_head freequeue;
+struct list_head readyqueue;
+
+struct task_struct * idle_task;
+
 
 
 /* get_DIR - Returns the Page Directory address for task 't' */
@@ -61,7 +64,16 @@ void cpu_idle(void)
 
 void init_idle (void)
 {
+	struct list_head *idle_list_pointer = list_first(&freequeue);
+	list_del(idle_list_pointer);
+	idle_task = list_head_to_task_struct(idle_list_pointer);
 
+	union task_union *idle_union_stack = (union task_union *)idle_task;
+
+	idle_task->PID = 0;
+	idle_union_stack->stack[1023] = (unsigned long)&cpu_idle;
+	idle_union_stack->stack[1023] = 0;
+	idle_union_stack->task.kernel_esp = (unsigned long)&idle_union_stack->stack[1022];		
 }
 
 void init_task1(void)
@@ -84,3 +96,18 @@ struct task_struct* current()
   return (struct task_struct*)(ret_value&0xfffff000);
 }
 
+
+void init_freequeue(void)
+{
+	INIT_LIST_HEAD(&freequeue);
+
+	int i;
+	for (i = 0; i < NR_TASKS; ++i) {
+		list_add_tail(&task[i].task.list,&freequeue);
+	}
+}
+
+
+void init_readyqueue (void) {
+	INIT_LIST_HEAD(&readyqueue);
+}
