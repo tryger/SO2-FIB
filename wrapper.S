@@ -4,18 +4,22 @@ ENTRY(write)
 	pushl %ebp
 	movl %esp, %ebp
 
+	// Save edx and ecx
+	pushl %edx
+	pushl %ecx
+	pushl %ebx
+
 	movl 8(%ebp), %ebx
 	movl 12(%ebp), %ecx
 	movl 16(%ebp), %edx
 
 	movl $4, %eax
 
-	pushl %edx
-	pushl %ecx
-
+	// Save return address
 	leal write_ret, %esi
 	pushl %esi
 	
+	// Prepare stack frame for the syscall
 	pushl %ebp
 	movl %esp, %ebp
 
@@ -24,17 +28,24 @@ write_ret:
 	movl %ebp, %esp
 	popl %ebp
 
+	
+	test %eax, %eax
+	jns end
+error:
+	neg %eax
+	movl %eax, errno
+	
+	movl $-1, %eax
+
+end:
+	popl %esi
+
+	popl %ebx
 	popl %ecx
 	popl %edx
-	
-
-	// error check
-
-	
 
 	movl %ebp, %esp
 	popl %ebp
-
 	ret
 
 

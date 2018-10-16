@@ -4,6 +4,9 @@
 
 #include <asm.h>
 #include <segment.h>
+#include <errno.h>
+
+.globl errno
 
 
 /**************************************************/
@@ -93,7 +96,7 @@ ENTRY(keyboard_handler)
 	RESTORE_ALL
 	iret
 
-// UNUSED
+// UNUSED (int 0x80)
 ENTRY(system_call_handler)
 	SAVE_ALL
 	// check si es una funcio
@@ -104,13 +107,13 @@ ENTRY(system_call_handler)
 	call *sys_call_table(, %eax, 4)
 	jmp end
 error:	
-	movl $-38, %eax
+	movl $-ENOSYS, %eax
 end:
 	movl %eax, 0x18(%esp)
 	RESTORE_ALL
 	iret
 
-
+// sysenter
 ENTRY(syscall_handler_sysenter)
 	push $__USER_DS
 	push %ebp
@@ -128,7 +131,7 @@ ENTRY(syscall_handler_sysenter)
 	jmp sysenter_fin
 
 sysenter_err:
-	movl $-38, %eax // ENOSYS
+	movl $-ENOSYS, %eax
 
 sysenter_fin:
 	movl %eax, 0x18(%esp)
