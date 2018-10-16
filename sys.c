@@ -15,6 +15,8 @@
 
 #include <system.h>
 
+#include <errno.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 
@@ -52,17 +54,34 @@ void sys_exit()
 int sys_write(int fd, char* buffer, int size)
 {
 	int ret;
+	char buff[256];
 	
 	if ((ret = check_fd(fd, ESCRIPTURA)))
 		return ret;
 	
        	if (buffer == NULL)
-		return -14; /* EFAULT */
+		return -EFAULT;
 
 	if (size < 0)
-		return -27; /* EFBIG ??? */
+		return -EINVAL;
 
-	return sys_write_console(buffer, size);
+	if (access_ok(VERIFY_READ, buffer, size) == 0)
+		return -EACCES;
+
+
+	ret = 0;
+	while (size > 256) {
+		copy_from_user(buffer, buff, 256);
+		ret += sys_write_console(buffer, 256);
+		buffer += 256;
+		size -= 256;
+	}
+
+	copy_from_user(buffer, buff, size);
+	ret += sys_write_console(buffer, size);
+
+
+	return ret;
 }
 
 int sys_gettime()
