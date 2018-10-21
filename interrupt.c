@@ -117,6 +117,9 @@ void keyboard_routine()
 
 		printc_xy(0, 0, c);
 	}
+
+	if (c == 'a')
+		task_switch(idle_task);
 }
 
 void clock_routine()
