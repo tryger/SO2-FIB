@@ -70,5 +70,21 @@ gettime_ret:
 
 	movl %ebp, %esp
 	popl %ebp
-
 	ret
+
+
+
+ENTRY(getpid)
+  pushl %ebp
+  movl %esp, %ebp
+
+  movl $20, %eax
+
+  leal getpid_ret, %esi
+
+  sysenter
+getpid_ret:
+  
+  movl %ebp, %esp
+  popl %ebp
+  ret

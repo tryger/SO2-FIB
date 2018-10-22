@@ -29,20 +29,22 @@ int check_fd(int fd, int permissions)
 
 int sys_ni_syscall()
 {
-	return -38; /*ENOSYS*/
+  return -ENOSYS;
 }
 
 int sys_getpid()
 {
-	return current()->PID;
+  return current()->PID;
 }
 
 int sys_fork()
 {
   int PID=-1;
 
-  // creates the child process
   
+  
+
+ 
   return PID;
 }
 

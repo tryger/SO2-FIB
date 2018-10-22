@@ -72,7 +72,7 @@ int __attribute__((__section__(".text.main")))
 
   /*** DO *NOT* ADD ANY CODE IN THIS ROUTINE BEFORE THIS POINT ***/
 
-  printk("Kernel Loaded!    ");
+  printk("Kernel Loaded!\n");
 
 
   zeos_ticks = 0;
@@ -100,7 +100,7 @@ int __attribute__((__section__(".text.main")))
   copy_data((void *) KERNEL_START + *p_sys_size, usr_main, *p_usr_size);
 
 
-  printk("Entering user mode...");
+  printk("Entering user mode...\n");
 
   enable_int();
   /*
