@@ -88,3 +88,33 @@ getpid_ret:
   movl %ebp, %esp
   popl %ebp
   ret
+
+
+ENTRY(fork)
+  pushl %ebp
+  movl %esp, %ebp
+
+  movl $2, %eax
+  leal fork_ret, %esi
+
+  pushl %ebp
+  movl %esp, %ebp
+
+  sysenter
+fork_ret:
+
+  movl %ebp, %esp
+  popl %ebp
+
+  test %eax, %eax
+  jns fork_end
+
+  neg %eax
+  movl %eax, errno
+  movl $-1, %eax
+
+fork_end:
+  
+
+  movl %ebp, %esp
+  popl %ebp

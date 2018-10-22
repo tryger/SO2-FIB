@@ -22,7 +22,7 @@ int fork();
 
 void exit();
 
-
+int fork();
 
 int errno;
 

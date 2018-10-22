@@ -116,10 +116,11 @@ end:
 // sysenter
 ENTRY(syscall_handler_sysenter)
 	push $__USER_DS
-	push %ebp
+	push %ebp // user stack
 	pushfl
 	push $__USER_CS
-	push 4(%ebp)
+	push 4(%ebp) // user return address
+
 	SAVE_ALL
 
 	cmpl $0, %eax
@@ -135,14 +136,12 @@ sysenter_err:
 
 sysenter_fin:
 	movl %eax, 0x18(%esp)
-
 	RESTORE_ALL
 
-	movl (%esp), %edx
+	movl (%esp), %edx // user return address
+	movl 12(%esp), %ecx // user stack
 
-	movl 12(%esp), %ecx
-	sti
-
+  sti
 	sysexit
 
 
@@ -152,3 +151,8 @@ ENTRY(clock_handler)
 	call clock_routine
 	RESTORE_ALL
 	iret
+
+
+ENTRY(ret_from_fork)
+  RESTORE_ALL
+  iret

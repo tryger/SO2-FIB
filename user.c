@@ -37,6 +37,16 @@ int __attribute__ ((__section__(".text.main")))
 
   int pid = getpid();
 
+  pid = fork();
+
+  if (pid == 0) {
+    write(1, "FILL\n", 5);
+  } else if (pid > 0) {
+    write(1, "PARE\n", 5);
+  } else {
+    write(1, "ERROR\n", 6);
+  }
+
   write(1, "HOLA\n", 5);
 
   while(1);

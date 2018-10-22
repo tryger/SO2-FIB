@@ -28,6 +28,7 @@ struct list_head readyqueue;
 
 struct task_struct * idle_task;
 
+int nextPID;
 
 
 /* get_DIR - Returns the Page Directory address for task 't' */
@@ -91,14 +92,19 @@ void init_task1(void)
 	allocate_DIR(task1_task_struct);
 	set_user_pages(task1_task_struct);
 
-	//tss.esp0 = (Word)&task1_union_stack->stack[KERNEL_STACK_SIZE-1];
+	tss.esp0 = (Word)&task1_union_stack->stack[KERNEL_STACK_SIZE-1];
 	writeMSR(0x175, tss.esp0);
 
 	set_cr3(task1_task_struct->dir_pages_baseAddr);
 }
 
+int getNewPID(void) {
+  return nextPID++;
+}
 
 void init_sched(){
+  nextPID = 0;
+
 	init_freequeue();
 	init_readyqueue();
 }
