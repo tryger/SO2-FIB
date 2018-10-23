@@ -155,4 +155,5 @@ ENTRY(clock_handler)
 
 ENTRY(ret_from_fork)
   RESTORE_ALL
+  xor %eax, %eax
   iret
