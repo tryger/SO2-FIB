@@ -59,6 +59,7 @@ ENTRY(gettime)
 	pushl %ecx
 
 	leal gettime_ret, %esi
+  pushl %esi
 
 	pushl %ebp
 	movl %esp, %ebp
@@ -66,7 +67,15 @@ ENTRY(gettime)
 	sysenter
 gettime_ret:
 
+	movl %ebp, %esp
+	popl %ebp
+
+  popl %esi
+
 	// error check
+
+  popl %ecx
+  popl %edx
 
 	movl %ebp, %esp
 	popl %ebp
@@ -78,12 +87,28 @@ ENTRY(getpid)
   pushl %ebp
   movl %esp, %ebp
 
-  movl $20, %eax
+  pushl %ecx
+  pushl %edx
 
+  movl $20, %eax
   leal getpid_ret, %esi
+  pushl %esi
+
+  pushl %ebp
+  movl %esp, %ebp
 
   sysenter
 getpid_ret:
+
+  movl %ebp, %esp
+  popl %ebp
+
+  popl %esi
+
+  // error check
+
+  popl %edx
+  popl %ecx
   
   movl %ebp, %esp
   popl %ebp
@@ -94,8 +119,12 @@ ENTRY(fork)
   pushl %ebp
   movl %esp, %ebp
 
+  pushl %ecx
+  pushl %edx
+
   movl $2, %eax
   leal fork_ret, %esi
+  pushl %esi
 
   pushl %ebp
   movl %esp, %ebp
@@ -106,6 +135,8 @@ fork_ret:
   movl %ebp, %esp
   popl %ebp
 
+  popl %esi
+
   test %eax, %eax
   jns fork_end
 
@@ -114,7 +145,9 @@ fork_ret:
   movl $-1, %eax
 
 fork_end:
-  
+  popl %edx
+  popl %ecx
 
   movl %ebp, %esp
   popl %ebp
+  ret

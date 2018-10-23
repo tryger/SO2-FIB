@@ -75,7 +75,7 @@ void init_idle (void)
 
 	union task_union *idle_union_stack = (union task_union *)idle_task;
 
-	idle_task->PID = 0;
+	idle_task->PID = getNewPID();
 	idle_union_stack->stack[KERNEL_STACK_SIZE-1] = (unsigned long)&cpu_idle;
 	idle_union_stack->stack[KERNEL_STACK_SIZE-2] = 0;
 	idle_union_stack->task.kernel_esp = (unsigned long)&idle_union_stack->stack[1022];		
@@ -88,11 +88,11 @@ void init_task1(void)
 	struct task_struct *task1_task_struct = list_head_to_task_struct(task1_list_pointer);
 	union task_union *task1_union_stack = (union task_union *)task1_task_struct;
 
-	task1_task_struct->PID = 1;
+	task1_task_struct->PID = getNewPID();
 	allocate_DIR(task1_task_struct);
 	set_user_pages(task1_task_struct);
 
-	tss.esp0 = (Word)&task1_union_stack->stack[KERNEL_STACK_SIZE-1];
+	tss.esp0 = &task1_union_stack->stack[KERNEL_STACK_SIZE-1];
 	writeMSR(0x175, tss.esp0);
 
 	set_cr3(task1_task_struct->dir_pages_baseAddr);

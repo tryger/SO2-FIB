@@ -22,8 +22,8 @@
 
 int check_fd(int fd, int permissions)
 {
-  if (fd!=1) return -9; /*EBADF*/
-  if (permissions!=ESCRIPTURA) return -13; /*EACCES*/
+  if (fd!=1) return -EBADF;
+  if (permissions!=ESCRIPTURA) return -EACCES;
   return 0;
 }
 
@@ -57,9 +57,9 @@ int sys_fork()
 
   /* Obtenim un PCB pel nou procés */
   lh = list_first(&freequeue);
-  list_del(lh);
   tsk = list_head_to_task_struct(lh);
   tsku = (union task_union *)tsk;
+  list_del(lh);
 
   /* Reservem els frames de data pel nou proces */
   for (pag=0; pag < NUM_PAG_DATA; pag++) {
@@ -73,7 +73,7 @@ int sys_fork()
   }
 
   /* Copiem el PCB i l'stack del pare al fill */
-  copy_data((void *)tsku_cur, (void *)tsku, KERNEL_STACK_SIZE);
+  copy_data((void *)tsku_cur, (void *)tsku, KERNEL_STACK_SIZE*sizeof(DWord));
 
   allocate_DIR(tsk);
   
@@ -97,10 +97,13 @@ int sys_fork()
     set_ss_pag(pt_cur, FIRST_FREE_PAGE, frames[pag]);
     copy_data((void *)((PAG_LOG_INIT_DATA+pag)<<12), (void *)(FIRST_FREE_PAGE<<12), PAGE_SIZE);
     del_ss_pag(pt_cur, FIRST_FREE_PAGE);
+    /* Fem flush del TLB per a que tradueixi a l'anterior */
+    set_cr3(get_DIR(tsk_cur));
   }
 
-  /* Flush TLB */
-  set_cr3(get_DIR(tsk));
+  /*__asm__ __volatile__ (
+    "movl %%ebp, %0"
+  );*/
 
   tsku->stack[KERNEL_STACK_SIZE-18] = &ret_from_fork;
   tsku->stack[KERNEL_STACK_SIZE-19] = 0;
