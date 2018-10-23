@@ -43,3 +43,7 @@ int strlen(char *a)
   return i;
 }
 
+void perror()
+{
+  write(1, "ERROR\n", 6);
+}

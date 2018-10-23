@@ -15,4 +15,6 @@ void clock_handler();
 
 void writeMSR(int reg, int val);
 
+void ret_from_fork(void);
+
 #endif  /* __ENTRY_H__ */

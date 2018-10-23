@@ -151,3 +151,74 @@ fork_end:
   movl %ebp, %esp
   popl %ebp
   ret
+
+
+
+
+ENTRY(exit)
+	pushl %ebp
+	movl %esp, %ebp
+
+	movl $1, %eax
+
+	pushl %edx
+	pushl %ecx
+
+	leal exit_ret, %esi
+  pushl %esi
+
+	pushl %ebp
+	movl %esp, %ebp
+
+	sysenter
+exit_ret:
+
+	movl %ebp, %esp
+	popl %ebp
+
+  popl %esi
+
+	// error check
+
+  popl %ecx
+  popl %edx
+
+	movl %ebp, %esp
+	popl %ebp
+	ret
+
+
+
+
+
+ENTRY(get_stats)
+	pushl %ebp
+	movl %esp, %ebp
+
+	movl $35, %eax
+
+	pushl %edx
+	pushl %ecx
+
+	leal getstats_ret, %esi
+  pushl %esi
+
+	pushl %ebp
+	movl %esp, %ebp
+
+	sysenter
+getstats_ret:
+
+	movl %ebp, %esp
+	popl %ebp
+
+  popl %esi
+
+	// error check
+
+  popl %ecx
+  popl %edx
+
+	movl %ebp, %esp
+	popl %ebp
+	ret

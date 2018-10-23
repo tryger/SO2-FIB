@@ -17,6 +17,8 @@
 
 #include <errno.h>
 
+#include <entry.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 
@@ -97,26 +99,33 @@ int sys_fork()
     set_ss_pag(pt_cur, FIRST_FREE_PAGE, frames[pag]);
     copy_data((void *)((PAG_LOG_INIT_DATA+pag)<<12), (void *)(FIRST_FREE_PAGE<<12), PAGE_SIZE);
     del_ss_pag(pt_cur, FIRST_FREE_PAGE);
-    /* Fem flush del TLB per a que tradueixi a l'anterior */
+    /* Fem flush del TLB per a evitar que tradueixi a l'anterior */
     set_cr3(get_DIR(tsk_cur));
   }
 
-  /*__asm__ __volatile__ (
-    "movl %%ebp, %0"
-  );*/
+  PID = getNewPID();
+  tsk->PID = PID;
 
   tsku->stack[KERNEL_STACK_SIZE-18] = &ret_from_fork;
   tsku->stack[KERNEL_STACK_SIZE-19] = 0;
   tsk->kernel_esp = &tsku->stack[KERNEL_STACK_SIZE-19];
-
-  PID = getNewPID();
-  tsk->PID = PID;
+  
+  list_add_tail(&tsk->list, &readyqueue);
+  tsk->quantum = QUANTUM_DEFAULT;
+  tsk->process_state = ST_READY;
 
   return PID;
 }
 
 void sys_exit()
-{  
+{
+  free_user_pages(current());
+
+  list_add_tail(&(current()->list), &freequeue);
+
+  current()->PID = -1;
+
+  sched_next(); 
 }
 
 
@@ -156,4 +165,9 @@ int sys_write(int fd, char* buffer, int size)
 int sys_gettime()
 {
 	return zeos_ticks;
+}
+
+int sys_get_stats(int pid, struct stats *st)
+{
+  
 }

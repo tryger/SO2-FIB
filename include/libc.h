@@ -23,7 +23,7 @@ int fork();
 void exit();
 
 
-
+void perror();
 int errno;
 
 #endif  /* __LIBC_H__ */

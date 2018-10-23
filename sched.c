@@ -30,6 +30,8 @@ struct task_struct * idle_task;
 
 int nextPID;
 
+int quantum;
+
 
 /* get_DIR - Returns the Page Directory address for task 't' */
 page_table_entry * get_DIR (struct task_struct *t) 
@@ -67,6 +69,19 @@ void cpu_idle(void)
 	}
 }
 
+
+void init_stats(struct task_struct *t)
+{
+  t->p_stats.user_ticks = 0;
+  t->p_stats.system_ticks = 0;
+  t->p_stats.blocked_ticks = 0;
+  t->p_stats.ready_ticks = 0;
+  t->p_stats.elapsed_total_ticks = get_ticks();
+  t->p_stats.total_trans = 0;
+  t->p_stats.remaining_ticks = get_ticks();
+}
+
+
 void init_idle (void)
 {
 	struct list_head *idle_list_pointer = list_first(&freequeue);
@@ -76,11 +91,14 @@ void init_idle (void)
 	union task_union *idle_union_stack = (union task_union *)idle_task;
 
 	idle_task->PID = getNewPID();
+  idle_task->quantum = QUANTUM_DEFAULT;
+
+  init_stats(idle_task);
+
 	idle_union_stack->stack[KERNEL_STACK_SIZE-1] = (unsigned long)&cpu_idle;
 	idle_union_stack->stack[KERNEL_STACK_SIZE-2] = 0;
-	idle_union_stack->task.kernel_esp = (unsigned long)&idle_union_stack->stack[1022];		
+	idle_union_stack->task.kernel_esp = (unsigned long)&idle_union_stack->stack[KERNEL_STACK_SIZE-2];
 }
-
 void init_task1(void)
 {
 	struct list_head *task1_list_pointer = list_first(&freequeue);
@@ -89,7 +107,13 @@ void init_task1(void)
 	union task_union *task1_union_stack = (union task_union *)task1_task_struct;
 
 	task1_task_struct->PID = getNewPID();
-	allocate_DIR(task1_task_struct);
+	task1_task_struct->quantum = QUANTUM_DEFAULT;
+	task1_task_struct->process_state = ST_RUN;
+  quantum = task1_task_struct->quantum;
+
+  init_stats(task1_task_struct);
+
+  allocate_DIR(task1_task_struct);
 	set_user_pages(task1_task_struct);
 
 	tss.esp0 = &task1_union_stack->stack[KERNEL_STACK_SIZE-1];
@@ -102,11 +126,22 @@ int getNewPID(void) {
   return nextPID++;
 }
 
+
+void init_sched_rr()
+{
+  update_sched_data = update_sched_data_rr;
+  needs_sched = needs_sched_rr;
+  update_process_state = update_process_state_rr;
+  sched_next = sched_next_rr;
+}
+
 void init_sched(){
   nextPID = 0;
 
 	init_freequeue();
 	init_readyqueue();
+
+  init_sched_rr();
 }
 
 struct task_struct* current()
@@ -127,6 +162,7 @@ void init_freequeue(void)
 
 	int i;
 	for (i = 0; i < NR_TASKS; ++i) {
+    task[i].task.PID = -1;
 		list_add_tail(&task[i].task.list,&freequeue);
 	}
 }
@@ -172,4 +208,92 @@ void inner_task_switch(union task_union *new)
 		:
 		: "g" (cur_esp), "g" (new_esp)
 	);
+}
+
+int get_quantum(struct task_struct *t)
+{
+  return t->quantum;
+}
+
+void set_quantum(struct task_struct *t, int q)
+{
+  t->quantum = q;
+}
+
+
+void update_stats(unsigned long *v, unsigned long *elapsed)
+{
+  unsigned long ct = get_ticks();
+  *v += ct - *elapsed;
+  *elapsed = get_ticks();
+}
+
+
+int needs_sched_rr()
+{
+  if ((quantum == 0) && (!list_empty(&readyqueue)))
+    return 1;
+
+  if (quantum == 0)
+    quantum = get_quantum(current());
+
+  return 0;
+}
+
+void update_sched_data_rr()
+{
+  --quantum;
+}
+
+void update_process_state_rr(struct task_struct *t, struct list_head *dest)
+{
+  
+  list_add_tail(&t->list, dest);
+
+  if (dest != NULL) {
+    if (dest != &readyqueue) {
+      t->process_state = ST_BLOCKED;
+    } else {
+      update_stats(&(t->p_stats.system_ticks), &(t->p_stats.elapsed_total_ticks));
+      t->process_state = ST_READY;
+    }
+  } else {
+    t->process_state = ST_RUN;
+  }
+
+}
+
+void sched_next_rr()
+{
+  struct list_head *lh;
+  struct task_struct *tsk;
+
+
+  if (!list_empty(&readyqueue)) {
+    lh = list_first(&readyqueue);
+    tsk = list_head_to_task_struct(lh);
+    list_del(lh);
+  } else {
+    tsk = idle_task;
+  }
+
+  tsk->process_state = ST_RUN;
+  quantum = get_quantum(tsk);
+
+  update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
+  update_stats(&(tsk->p_stats.ready_ticks), &(tsk->p_stats.elapsed_total_ticks));
+  tsk->p_stats.total_trans;
+
+  task_switch((union task_union *)tsk);
+}
+
+
+void schedule()
+{
+  update_sched_data();
+  
+  if (needs_sched()) {
+    update_process_state(current(), &readyqueue);
+    sched_next();
+  }
 }
