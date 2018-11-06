@@ -103,7 +103,7 @@ int sys_fork()
     set_cr3(get_DIR(tsk_cur));
   }
 
-  PID = getNewPID();
+  PID = get_new_pid();
   tsk->PID = PID;
 
   tsku->stack[KERNEL_STACK_SIZE-18] = &ret_from_fork;
@@ -169,5 +169,22 @@ int sys_gettime()
 
 int sys_get_stats(int pid, struct stats *st)
 {
-  
+	union task_union *tsku;
+	
+	
+	if (!access_ok(VERIFY_WRITE, st, sizeof(struct stats)))
+		return -EFAULT;
+
+	if (pid < 0)
+		return -EINVAL;
+
+	
+	tsku = get_task_union_from_pid(pid);
+
+	if (tsku == NULL)
+		return -ESRCH;
+
+	copy_to_user(&tsku->task.p_stats, st, sizeof(struct stats));
+
+	return 0;
 }

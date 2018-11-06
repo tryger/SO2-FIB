@@ -62,7 +62,7 @@ page_table_entry * get_PT (struct task_struct *t) ;
 
 page_table_entry * get_DIR (struct task_struct *t) ;
 
-int getNewPID(void);
+int get_new_pid(void);
 
 int get_quantum(struct task_struct *);
 void set_quantum(struct task_struct *, int);

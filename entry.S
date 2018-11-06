@@ -96,23 +96,6 @@ ENTRY(keyboard_handler)
 	RESTORE_ALL
 	iret
 
-// UNUSED (int 0x80)
-ENTRY(system_call_handler)
-	SAVE_ALL
-	// check si es una funcio
-	cmpl $0, %eax
-	jl error
-	cmpl $MAX_SYSCALL, %eax
-	jg error
-	call *sys_call_table(, %eax, 4)
-	jmp end
-error:	
-	movl $-ENOSYS, %eax
-end:
-	movl %eax, 0x18(%esp)
-	RESTORE_ALL
-	iret
-
 // sysenter
 ENTRY(syscall_handler_sysenter)
 	push $__USER_DS

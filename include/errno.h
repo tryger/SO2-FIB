@@ -1,3 +1,8 @@
+#ifndef ERRNO_H
+#define ERRNO_H
+
+#define MIN_ERRNO_VALUE 1
+#define MAX_ERRNO_VALUE 129
 
 #define	EPERM		 1	/* Operation not permitted */
 #define	ENOENT		 2	/* No such file or directory */
@@ -149,3 +154,4 @@
 
 #define EHWPOISON	133	/* Memory page has hardware error */
 
+#endif

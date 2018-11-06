@@ -70,59 +70,64 @@ void cpu_idle(void)
 }
 
 
-void init_stats(struct task_struct *t)
+void init_stats(struct stats *st)
 {
-  t->p_stats.user_ticks = 0;
-  t->p_stats.system_ticks = 0;
-  t->p_stats.blocked_ticks = 0;
-  t->p_stats.ready_ticks = 0;
-  t->p_stats.elapsed_total_ticks = get_ticks();
-  t->p_stats.total_trans = 0;
-  t->p_stats.remaining_ticks = get_ticks();
+	st->user_ticks = 0;
+	st->system_ticks = 0;
+	st->blocked_ticks = 0;
+	st->ready_ticks = 0;
+	st->elapsed_total_ticks = get_ticks();
+	st->total_trans = 0;
+	st->remaining_ticks = 0;
 }
 
 
 void init_idle (void)
 {
-	struct list_head *idle_list_pointer = list_first(&freequeue);
-	list_del(idle_list_pointer);
-	idle_task = list_head_to_task_struct(idle_list_pointer);
+	struct list_head *lh = list_first(&freequeue);
+	list_del(lh);
+	tsk = list_head_to_task_struct(lh);
 
-	union task_union *idle_union_stack = (union task_union *)idle_task;
+	union task_union *tsku = (union task_union *)tsk;
 
-	idle_task->PID = getNewPID();
-  idle_task->quantum = QUANTUM_DEFAULT;
+	tsk->PID = get_new_pid();
 
-  init_stats(idle_task);
+	/* Init stats */
+	tsk->quantum = QUANTUM_DEFAULT;
+	tsk->process_state = ST_READY;
+	init_stats(tsk->p_stats);
 
-	idle_union_stack->stack[KERNEL_STACK_SIZE-1] = (unsigned long)&cpu_idle;
-	idle_union_stack->stack[KERNEL_STACK_SIZE-2] = 0;
-	idle_union_stack->task.kernel_esp = (unsigned long)&idle_union_stack->stack[KERNEL_STACK_SIZE-2];
+	tsku->stack[KERNEL_STACK_SIZE-1] = (unsigned long)&cpu_idle;
+	tsku->stack[KERNEL_STACK_SIZE-2] = 0;
+	tsku->task.kernel_esp = (unsigned long)&tsku->stack[KERNEL_STACK_SIZE-2];
 }
 void init_task1(void)
 {
-	struct list_head *task1_list_pointer = list_first(&freequeue);
-	list_del(task1_list_pointer);
-	struct task_struct *task1_task_struct = list_head_to_task_struct(task1_list_pointer);
-	union task_union *task1_union_stack = (union task_union *)task1_task_struct;
+	struct list_head *lh = list_first(&freequeue);
+	list_del(lh);
+	struct task_struct *tsk = list_head_to_task_struct(lh);
+	union task_union *tsku = (union task_union *)tsk;
 
-	task1_task_struct->PID = getNewPID();
-	task1_task_struct->quantum = QUANTUM_DEFAULT;
-	task1_task_struct->process_state = ST_RUN;
-  quantum = task1_task_struct->quantum;
+	tsk->PID = get_new_pid();
+	
+	/* Init stats*/
+	tsk->quantum = QUANTUM_DEFAULT;
+	tsk->process_state = ST_RUN;
+	init_stats(tsk->p_stats);
+	tsk->p_stats.remaining_ticks = tsk->quantum;
 
-  init_stats(task1_task_struct);
+	quantum = tsk->quantum;
 
-  allocate_DIR(task1_task_struct);
-	set_user_pages(task1_task_struct);
+	allocate_DIR(tsk);
+	set_user_pages(tsk);
 
-	tss.esp0 = &task1_union_stack->stack[KERNEL_STACK_SIZE-1];
+	tss.esp0 = &tsku->stack[KERNEL_STACK_SIZE-1];
 	writeMSR(0x175, tss.esp0);
 
-	set_cr3(task1_task_struct->dir_pages_baseAddr);
+	set_cr3(tsk->dir_pages_baseAddr);
 }
 
-int getNewPID(void) {
+int get_new_pid(void) {
   return nextPID++;
 }
 

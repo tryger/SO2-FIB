@@ -8,6 +8,7 @@ ENTRY(write)
 	pushl %edx
 	pushl %ecx
 	pushl %ebx
+	pushl %esi
 
 	movl 8(%ebp), %ebx
 	movl 12(%ebp), %ecx
@@ -40,6 +41,7 @@ error:
 end:
 	popl %esi
 
+	popl %esi
 	popl %ebx
 	popl %ecx
 	popl %edx
@@ -57,9 +59,10 @@ ENTRY(gettime)
 
 	pushl %edx
 	pushl %ecx
+	pushl %esi
 
 	leal gettime_ret, %esi
-  pushl %esi
+	pushl %esi
 
 	pushl %ebp
 	movl %esp, %ebp
@@ -70,12 +73,13 @@ gettime_ret:
 	movl %ebp, %esp
 	popl %ebp
 
-  popl %esi
+	popl %esi
 
 	// error check
 
-  popl %ecx
-  popl %edx
+	popl %esi
+	popl %ecx
+	popl %edx
 
 	movl %ebp, %esp
 	popl %ebp
@@ -89,6 +93,7 @@ ENTRY(getpid)
 
   pushl %ecx
   pushl %edx
+  pushl %esi
 
   movl $20, %eax
   leal getpid_ret, %esi
@@ -107,6 +112,7 @@ getpid_ret:
 
   // error check
 
+  popl %esi
   popl %edx
   popl %ecx
   
@@ -121,6 +127,7 @@ ENTRY(fork)
 
   pushl %ecx
   pushl %edx
+  pushl %esi
 
   movl $2, %eax
   leal fork_ret, %esi
@@ -145,6 +152,7 @@ fork_ret:
   movl $-1, %eax
 
 fork_end:
+  popl %esi
   popl %edx
   popl %ecx
 
@@ -163,6 +171,7 @@ ENTRY(exit)
 
 	pushl %edx
 	pushl %ecx
+	pushl %esi
 
 	leal exit_ret, %esi
   pushl %esi
@@ -180,6 +189,7 @@ exit_ret:
 
 	// error check
 
+  popl %esi
   popl %ecx
   popl %edx
 
@@ -197,8 +207,13 @@ ENTRY(get_stats)
 
 	movl $35, %eax
 
+	pushl %ebx
 	pushl %edx
 	pushl %ecx
+	pushl %esi
+
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
 
 	leal getstats_ret, %esi
   pushl %esi
@@ -216,8 +231,10 @@ getstats_ret:
 
 	// error check
 
+  popl %esi
   popl %ecx
   popl %edx
+  popl %ebx
 
 	movl %ebp, %esp
 	popl %ebp

@@ -1,6 +1,8 @@
 #include <utils.h>
 #include <types.h>
 
+#include <sched.h>
+
 #include <mm_address.h>
 
 void copy_data(void *start, void *dest, int size)
@@ -129,4 +131,16 @@ unsigned long get_ticks(void) {
         do_div(ticks,CYCLESPERTICK);
 
         return ticks;
+}
+
+union task_union *get_task_union_from_pid(int pid)
+{
+	int i;
+
+	for (i=0; i < NR_TASKS; i++) {
+		if (task[i].task.PID == pid)
+			return &task[i];
+	}
+
+	return NULL;
 }

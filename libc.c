@@ -4,6 +4,9 @@
 
 #include <libc.h>
 
+#include <errno.h>
+#include <errmsg.h>
+
 #include <types.h>
 
 int errno;
@@ -43,7 +46,12 @@ int strlen(char *a)
   return i;
 }
 
-void perror()
+void perror(void)
 {
-  write(1, "ERROR\n", 6);
+  if (errno < MIN_ERRNO_VALUE || errno > MAX_ERRNO_VALUE)
+	  errno = 1;
+
+  write(1,"ERROR DESCRIPTION: ",19);
+  write(1, errmsg[errno - 1], strlen(errmsg[errno - 1]));
+  write(1,"\n",1);
 }
