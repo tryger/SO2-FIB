@@ -8,6 +8,8 @@
 #include <entry.h>
 #include <types.h>
 
+#include <sched/rr.h>
+
 /**
  * Container for the Task array and 2 additional pages (the first and the last one)
  * to protect against out of bound accesses.
@@ -85,17 +87,19 @@ void init_stats(struct stats *st)
 void init_idle (void)
 {
 	struct list_head *lh = list_first(&freequeue);
-	list_del(lh);
-	tsk = list_head_to_task_struct(lh);
+	struct task_struct *tsk;
+	union task_union *tsku;
 
-	union task_union *tsku = (union task_union *)tsk;
+	list_del(lh);
+       	tsk = list_head_to_task_struct(lh);
+       	tsku = (union task_union *)tsk;
 
 	tsk->PID = get_new_pid();
 
 	/* Init stats */
 	tsk->quantum = QUANTUM_DEFAULT;
 	tsk->process_state = ST_READY;
-	init_stats(tsk->p_stats);
+	init_stats(&tsk->p_stats);
 
 	tsku->stack[KERNEL_STACK_SIZE-1] = (unsigned long)&cpu_idle;
 	tsku->stack[KERNEL_STACK_SIZE-2] = 0;
@@ -113,7 +117,7 @@ void init_task1(void)
 	/* Init stats*/
 	tsk->quantum = QUANTUM_DEFAULT;
 	tsk->process_state = ST_RUN;
-	init_stats(tsk->p_stats);
+	init_stats(&tsk->p_stats);
 	tsk->p_stats.remaining_ticks = tsk->quantum;
 
 	quantum = tsk->quantum;
@@ -131,14 +135,6 @@ int get_new_pid(void) {
   return nextPID++;
 }
 
-
-void init_sched_rr()
-{
-  update_sched_data = update_sched_data_rr;
-  needs_sched = needs_sched_rr;
-  update_process_state = update_process_state_rr;
-  sched_next = sched_next_rr;
-}
 
 void init_sched(){
   nextPID = 0;
@@ -177,7 +173,7 @@ void init_readyqueue (void) {
 	INIT_LIST_HEAD(&readyqueue);
 }
 
-void task_switch(union task_union *new)
+/*void task_switch(union task_union *new)
 {
 	__asm__ __volatile__ (
 		"pushl %esi;"
@@ -192,7 +188,7 @@ void task_switch(union task_union *new)
 		"popl %edi;"
 		"popl %esi;"		
 	);
-}
+}*/
 
 void inner_task_switch(union task_union *new)
 {
@@ -226,72 +222,31 @@ void set_quantum(struct task_struct *t, int q)
 }
 
 
+void update_stats_user_to_system(struct task_struct *tsk)
+{
+	update_stats(&tsk->p_stats.user_ticks, &tsk->p_stats.elapsed_total_ticks);
+}
+
+void update_stats_system_to_user(struct task_struct *tsk)
+{
+	update_stats(&tsk->p_stats.system_ticks, &tsk->p_stats.elapsed_total_ticks);
+}
+
+void update_stats_run_to_ready(struct task_struct *tsk)
+{
+	update_stats(&tsk->p_stats.system_ticks, &tsk->p_stats.elapsed_total_ticks);
+}
+
+void update_stats_ready_to_run(struct task_struct *tsk)
+{
+	update_stats(&tsk->p_stats.ready_ticks, &tsk->p_stats.elapsed_total_ticks);
+}
+
 void update_stats(unsigned long *v, unsigned long *elapsed)
 {
-  unsigned long ct = get_ticks();
-  *v += ct - *elapsed;
+  *v += get_ticks() - *elapsed;
   *elapsed = get_ticks();
 }
-
-
-int needs_sched_rr()
-{
-  if ((quantum == 0) && (!list_empty(&readyqueue)))
-    return 1;
-
-  if (quantum == 0)
-    quantum = get_quantum(current());
-
-  return 0;
-}
-
-void update_sched_data_rr()
-{
-  --quantum;
-}
-
-void update_process_state_rr(struct task_struct *t, struct list_head *dest)
-{
-  
-  list_add_tail(&t->list, dest);
-
-  if (dest != NULL) {
-    if (dest != &readyqueue) {
-      t->process_state = ST_BLOCKED;
-    } else {
-      update_stats(&(t->p_stats.system_ticks), &(t->p_stats.elapsed_total_ticks));
-      t->process_state = ST_READY;
-    }
-  } else {
-    t->process_state = ST_RUN;
-  }
-
-}
-
-void sched_next_rr()
-{
-  struct list_head *lh;
-  struct task_struct *tsk;
-
-
-  if (!list_empty(&readyqueue)) {
-    lh = list_first(&readyqueue);
-    tsk = list_head_to_task_struct(lh);
-    list_del(lh);
-  } else {
-    tsk = idle_task;
-  }
-
-  tsk->process_state = ST_RUN;
-  quantum = get_quantum(tsk);
-
-  update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
-  update_stats(&(tsk->p_stats.ready_ticks), &(tsk->p_stats.elapsed_total_ticks));
-  tsk->p_stats.total_trans;
-
-  task_switch((union task_union *)tsk);
-}
-
 
 void schedule()
 {

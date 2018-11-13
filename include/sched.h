@@ -73,12 +73,9 @@ void (*update_process_state)(struct task_struct *t, struct list_head *dest);
 int (*needs_sched)();
 void (*update_sched_data)();
 
-/* Headers for the scheduling policy */
-void init_sched_rr();
-
-void sched_next_rr();
-void update_process_state_rr(struct task_struct *t, struct list_head *dest);
-int needs_sched_rr();
-void update_sched_data_rr();
+void update_stats_user_to_system(struct task_struct*);
+void update_stats_system_to_user(struct task_struct*);
+void update_stats_ready_to_run(struct task_struct*);
+void update_stats_run_to_ready(struct task_struct*);
 
 #endif  /* __SCHED_H__ */

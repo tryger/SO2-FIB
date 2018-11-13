@@ -106,6 +106,14 @@ ENTRY(syscall_handler_sysenter)
 
 	SAVE_ALL
 
+	// update ticks
+	/*call current
+	pushl %eax
+	call update_stats_user_to_system
+	popl %eax
+	movl 0x18(%esp), %eax
+	*/
+	
 	cmpl $0, %eax
 	jl sysenter_err
 	cmpl $MAX_SYSCALL, %eax
@@ -119,6 +127,12 @@ sysenter_err:
 
 sysenter_fin:
 	movl %eax, 0x18(%esp)
+/*
+	call current
+	pushl %eax
+	call update_stats_system_to_user
+	popl %eax
+*/
 	RESTORE_ALL
 
 	movl (%esp), %edx // user return address
