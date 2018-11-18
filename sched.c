@@ -72,6 +72,11 @@ void cpu_idle(void)
 }
 
 
+int kernel_esp(union task_union *t)
+{
+	return KERNEL_ESP(t);
+}
+
 void init_stats(struct stats *st)
 {
 	st->user_ticks = 0;
@@ -190,7 +195,7 @@ void init_readyqueue (void) {
 	);
 }*/
 
-void inner_task_switch(union task_union *new)
+/*void inner_task_switch(union task_union *new)
 {
 	struct task_struct *cur = current();
 	
@@ -209,7 +214,7 @@ void inner_task_switch(union task_union *new)
 		:
 		: "g" (cur_esp), "g" (new_esp)
 	);
-}
+}*/
 
 int get_quantum(struct task_struct *t)
 {

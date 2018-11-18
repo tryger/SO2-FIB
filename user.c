@@ -35,7 +35,7 @@ int __attribute__ ((__section__(".text.main")))
     /* Next line, tries to move value 0 to CR3 register. This register is a privileged one, and so it will raise an exception */
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
-  pid = fork();
+  /*pid = fork();
   if (pid == 0)
   {
     write(1, "FILL\n", 5);
@@ -52,9 +52,9 @@ int __attribute__ ((__section__(".text.main")))
     perror();
   }
 
-  write(1, "HOLA\n", 5);
+  write(1, "HOLA\n", 5);*/
 
-  //runjp();
+  runjp();
 
   while(1);
     return 0;

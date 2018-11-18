@@ -67,9 +67,9 @@ void sched_next_rr()
   tsk->process_state = ST_RUN;
   quantum = get_quantum(tsk);
 
-  //update_stats_run_to_ready(current());
+  update_stats_run_to_ready(current());
   //update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
-  //update_stats_ready_to_run(tsk);
+  update_stats_ready_to_run(tsk);
   //update_stats(&(tsk->p_stats.ready_ticks), &(tsk->p_stats.elapsed_total_ticks));
 
 
