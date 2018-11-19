@@ -30,7 +30,7 @@ struct list_head readyqueue;
 
 struct task_struct * idle_task;
 
-int nextPID;
+int next_pid;
 
 int quantum;
 
@@ -57,6 +57,21 @@ int allocate_DIR(struct task_struct *t)
 	t->dir_pages_baseAddr = (page_table_entry*) &dir_pages[pos]; 
 
 	return 1;
+}
+
+int allocate_page_dir(struct task_struct *t)
+{
+	int pos = get_free_page_dir();
+	
+	t->dir_pages_baseAddr = (page_table_entry *) &dir_pages[pos];
+	dir_pages_used[pos]++;
+
+	return 1;
+}
+
+int calculate_dir_index(page_table_entry *d)
+{
+	return ((int)dir_pages - (int)d)/sizeof(page_table_entry);
 }
 
 void cpu_idle(void)
@@ -127,7 +142,7 @@ void init_task1(void)
 
 	quantum = tsk->quantum;
 
-	allocate_DIR(tsk);
+	allocate_page_dir(tsk);
 	set_user_pages(tsk);
 
 	tss.esp0 = &tsku->stack[KERNEL_STACK_SIZE-1];
@@ -137,12 +152,12 @@ void init_task1(void)
 }
 
 int get_new_pid(void) {
-  return nextPID++;
+  return next_pid++;
 }
 
 
 void init_sched(){
-  nextPID = 0;
+  next_pid = 0;
 
 	init_freequeue();
 	init_readyqueue();

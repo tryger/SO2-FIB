@@ -31,14 +31,13 @@ write_ret:
 
 	
 	test %eax, %eax
-	jns end
-error:
+	jns end_write
 	neg %eax
 	movl %eax, errno
 	
 	movl $-1, %eax
 
-end:
+end_write:
 	popl %esi
 
 	popl %esi
@@ -235,6 +234,229 @@ getstats_ret:
   popl %ecx
   popl %edx
   popl %ebx
+
+	movl %ebp, %esp
+	popl %ebp
+	ret
+
+ENTRY(clone)
+	pushl %ebp
+	movl %esp, %ebp
+
+	movl $19, %eax
+
+	pushl %ebx
+	pushl %edx
+	pushl %ecx
+	pushl %esi
+
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+
+	leal clone_ret, %esi
+	pushl %esi
+
+	pushl %ebp
+	movl %esp, %ebp
+
+	sysenter
+clone_ret:
+
+	movl %ebp, %esp
+	popl %ebp
+
+	test %eax, %eax
+	jns end_clone
+	neg %eax
+	movl %eax, errno
+	
+	movl $-1, %eax
+end_clone:
+
+	popl %esi
+
+	popl %esi
+	popl %ecx
+	popl %edx
+	popl %ebx
+
+	movl %ebp, %esp
+	popl %ebp
+	ret
+
+
+ENTRY(sem_init)
+	pushl %ebp
+	movl %esp, %ebp
+
+	movl $21, %eax
+
+	pushl %ebx
+	pushl %edx
+	pushl %ecx
+	pushl %esi
+
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+
+	leal sem_init_ret, %esi
+	pushl %esi
+
+	pushl %ebp
+	movl %esp, %ebp
+
+	sysenter
+sem_init_ret:
+
+	movl %ebp, %esp
+	popl %ebp
+
+	test %eax, %eax
+	jns end_sem_init
+	neg %eax
+	movl %eax, errno
+
+	movl $-1, %eax
+end_sem_init:
+
+	popl %esi
+
+	popl %esi
+	popl %ecx
+	popl %edx
+	popl %ebx
+
+	movl %ebp, %esp
+	popl %ebp
+	ret
+
+ENTRY(sem_wait)
+	pushl %ebp
+	movl %esp, %ebp
+
+	movl $22, %eax
+
+	pushl %ebx
+	pushl %edx
+	pushl %ecx
+	pushl %esi
+
+	movl 8(%ebp), %ebx
+
+	leal sem_wait_ret, %esi
+	pushl %esi
+
+	pushl %ebp
+	movl %esp, %ebp
+
+	sysenter
+sem_wait_ret:
+
+	movl %ebp, %esp
+	popl %ebp
+
+	test %eax, %eax
+	jns end_sem_wait
+	neg %eax
+	movl %eax, errno
+
+	movl $-1, %eax
+end_sem_wait:
+
+	popl %esi
+
+	popl %esi
+	popl %ecx
+	popl %edx
+	popl %ebx
+
+	movl %ebp, %esp
+	popl %ebp
+	ret
+
+ENTRY(sem_signal)
+	pushl %ebp
+	movl %esp, %ebp
+
+	movl $23, %eax
+
+	pushl %ebx
+	pushl %edx
+	pushl %ecx
+	pushl %esi
+
+	movl 8(%ebp), %ebx
+
+	leal sem_signal_ret, %esi
+	pushl %esi
+
+	pushl %ebp
+	movl %esp, %ebp
+
+	sysenter
+sem_signal_ret:
+
+	movl %ebp, %esp
+	popl %ebp
+
+	test %eax, %eax
+	jns end_sem_signal
+	neg %eax
+	movl %eax, errno
+
+	movl $-1, %eax
+end_sem_signal:
+
+	popl %esi
+
+	popl %esi
+	popl %ecx
+	popl %edx
+	popl %ebx
+
+	movl %ebp, %esp
+	popl %ebp
+	ret
+
+ENTRY(sem_destroy)
+	pushl %ebp
+	movl %esp, %ebp
+
+	movl $24, %eax
+
+	pushl %ebx
+	pushl %edx
+	pushl %ecx
+	pushl %esi
+
+	movl 8(%ebp), %ebx
+
+	leal sem_destroy_ret, %esi
+	pushl %esi
+
+	pushl %ebp
+	movl %esp, %ebp
+
+	sysenter
+sem_destroy_ret:
+
+	movl %ebp, %esp
+	popl %ebp
+
+	test %eax, %eax
+	jns end_sem_destroy
+	neg %eax
+	movl %eax, errno
+
+	movl $-1, %eax
+end_sem_destroy:
+
+	popl %esi
+
+	popl %esi
+	popl %ecx
+	popl %edx
+	popl %ebx
 
 	movl %ebp, %esp
 	popl %ebp

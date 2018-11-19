@@ -75,11 +75,9 @@ int sys_fork()
   }
 
   /* Copiem el PCB i l'stack del pare al fill */
-  copy_data((void *)tsku_cur, (void *)tsku, KERNEL_STACK_SIZE*sizeof(DWord));
+  copy_data((void *)tsku_cur, (void *)tsku, sizeof(union task_union));
 
-  allocate_DIR(tsk);
-  
-
+  allocate_page_dir(tsk);
   pt = get_PT(tsk);
 
   /* Copiem les entrades de codi a la TP del nou proces, ja que nomes son de lectura */
@@ -114,16 +112,74 @@ int sys_fork()
   tsk->quantum = QUANTUM_DEFAULT;
   tsk->process_state = ST_READY;
 
+  init_stats(&tsk->p_stats);
+
   return PID;
 }
 
+int sys_clone(void (*function)(void), void *stack)
+{
+  int PID, pag;
+  struct list_head *lh;
+  struct task_struct *tsk, *tsk_cur;
+  union task_union *tsku, *tsku_cur;
+  int frames[NUM_PAG_DATA];
+
+  if (!access_ok(VERIFY_READ, function, 4))
+    return -EFAULT;
+
+  if (!access_ok(VERIFY_WRITE, stack, 4))
+    return -EFAULT;
+
+  /* Obtenim l'estructura del proces actual */
+  tsk_cur = current();
+  tsku_cur = (union task_union *)tsk_cur;
+
+  /* Si no queden PCBs, retornem error */
+  if (list_empty(&freequeue))
+    return -EAGAIN;
+
+  /* Obtenim un PCB pel nou procés */
+  lh = list_first(&freequeue);
+  tsk = list_head_to_task_struct(lh);
+  tsku = (union task_union *)tsk;
+  list_del(lh);
+
+  /* Copiem el PCB i l'stack del pare al fill */
+  copy_data((void *)tsku_cur, (void *)tsku, sizeof(union task_union));
+
+  PID = get_new_pid();
+  tsk->PID = PID;
+  ++dir_pages_used[ calculate_dir_index(get_DIR(tsk)) ];
+
+  tsku->stack[KERNEL_STACK_SIZE-18] = &ret_from_fork;
+  tsku->stack[KERNEL_STACK_SIZE-19] = 0;
+  tsk->kernel_esp = &tsku->stack[KERNEL_STACK_SIZE-19];
+  tsku->stack[KERNEL_STACK_SIZE-5] = function;
+  tsku->stack[KERNEL_STACK_SIZE-2] = stack;  
+  
+  list_add_tail(&tsk->list, &readyqueue);
+  tsk->quantum = QUANTUM_DEFAULT;
+  tsk->process_state = ST_READY;
+
+  init_stats(&tsk->p_stats);
+
+  return PID;
+}
+
+
 void sys_exit()
 {
-  free_user_pages(current());
+  struct task_struct *cur = current();
+  int dir_index = calculate_dir_index(get_DIR(cur));
+  
+  if (--dir_pages_used[dir_index] <= 0) {
+  	free_user_pages(cur);
+  }
 
-  list_add_tail(&(current()->list), &freequeue);
+  list_add_tail(&cur->list, &freequeue);
 
-  current()->PID = -1;
+  cur->PID = -1;
 
   sched_next(); 
 }
@@ -186,5 +242,29 @@ int sys_get_stats(int pid, struct stats *st)
 
 	copy_to_user(&tsku->task.p_stats, st, sizeof(struct stats));
 
+	return 0;
+}
+
+
+
+/* Semaphores */
+
+int sys_sem_init(int n_sem, unsigned int value)
+{
+	return 0;
+}
+
+int sys_sem_wait(int n_sem)
+{
+	return 0;
+}
+
+int sys_sem_signal(int n_sem)
+{
+	return 0;
+}
+
+int sys_sem_destroy(int n_sem)
+{
 	return 0;
 }

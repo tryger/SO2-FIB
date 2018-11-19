@@ -22,6 +22,8 @@ Register    gdtR;
 page_table_entry dir_pages[NR_TASKS][TOTAL_PAGES]
   __attribute__((__section__(".data.task")));
 
+int dir_pages_used[NR_TASKS];
+
 page_table_entry pagusr_table[NR_TASKS][TOTAL_PAGES]
   __attribute__((__section__(".data.task")));
 
@@ -47,8 +49,17 @@ for (i = 0; i< NR_TASKS; i++) {
   dir_pages[i][ENTRY_DIR_PAGES].bits.rw = 1;
   dir_pages[i][ENTRY_DIR_PAGES].bits.present = 1;
 
+  dir_pages_used[i] = 0;
+}
 }
 
+int get_free_page_dir()
+{
+	int i;
+
+	for (i=0; dir_pages_used[i] > 0; i++);
+
+	return i;
 }
 
 /* Initializes the page table (kernel pages only) */
@@ -136,7 +147,7 @@ void init_mm()
   init_table_pages();
   init_frames();
   init_dir_pages();
-  allocate_DIR(&task[0].task);
+  allocate_page_dir(&task[0].task);
   set_cr3(get_DIR(&task[0].task));
   set_pe_flag();
 }
