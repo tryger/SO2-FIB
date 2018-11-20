@@ -47,7 +47,3 @@ ENTRY(inner_task_switch)
 	movl 16(%esi), %esp
 	popl %ebp
 	ret
-
-	//movl %ebp, %esp
-	//popl %ebp
-	//ret

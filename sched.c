@@ -74,7 +74,7 @@ int allocate_page_dir(struct task_struct *t)
 
 int calculate_dir_index(page_table_entry *d)
 {
-	return ((int)dir_pages - (int)d)/sizeof(page_table_entry);
+	return ((unsigned int)d - (unsigned int)dir_pages)/(sizeof(page_table_entry)*TOTAL_PAGES);
 }
 
 void cpu_idle(void)
