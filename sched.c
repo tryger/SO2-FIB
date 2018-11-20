@@ -7,6 +7,7 @@
 #include <io.h>
 #include <entry.h>
 #include <types.h>
+#include <semaphore.h>
 
 #include <sched/rr.h>
 
@@ -27,6 +28,8 @@ struct task_struct *list_head_to_task_struct(struct list_head *l)
 extern struct list_head blocked;
 struct list_head freequeue;
 struct list_head readyqueue;
+
+//struct semaphore semaphores[NR_SEMAPHORES];
 
 struct task_struct * idle_task;
 
@@ -161,6 +164,7 @@ void init_sched(){
 
 	init_freequeue();
 	init_readyqueue();
+	init_semaphores();
 
   init_sched_rr();
 }
@@ -176,6 +180,12 @@ struct task_struct* current()
   return (struct task_struct*)(ret_value&0xfffff000);
 }
 
+void init_semaphores(void)
+{
+	int i;
+	for (i=0; i < NR_SEMAPHORES; i++)
+		semaphores[i].pid = -1;
+}
 
 void init_freequeue(void)
 {
@@ -183,7 +193,7 @@ void init_freequeue(void)
 
 	int i;
 	for (i = 0; i < NR_TASKS; ++i) {
-    task[i].task.PID = -1;
+		task[i].task.PID = -1;
 		list_add_tail(&task[i].task.list,&freequeue);
 	}
 }

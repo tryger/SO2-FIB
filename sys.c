@@ -19,6 +19,8 @@
 
 #include <entry.h>
 
+#include <semaphore.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 
@@ -104,9 +106,9 @@ int sys_fork()
   PID = get_new_pid();
   tsk->PID = PID;
 
-  tsku->stack[KERNEL_STACK_SIZE-18] = &ret_from_fork;
-  tsku->stack[KERNEL_STACK_SIZE-19] = 0;
-  tsk->kernel_esp = &tsku->stack[KERNEL_STACK_SIZE-19];
+  tsku->stack[KERNEL_STACK_SIZE-17] = &ret_from_fork;
+  tsku->stack[KERNEL_STACK_SIZE-18] = 0;
+  tsk->kernel_esp = &tsku->stack[KERNEL_STACK_SIZE-18];
   
   list_add_tail(&tsk->list, &readyqueue);
   tsk->quantum = QUANTUM_DEFAULT;
@@ -155,8 +157,8 @@ int sys_clone(void (*function)(void), void *stack)
   tsku->stack[KERNEL_STACK_SIZE-18] = &ret_from_fork;
   tsku->stack[KERNEL_STACK_SIZE-19] = 0;
   tsk->kernel_esp = &tsku->stack[KERNEL_STACK_SIZE-19];
-  tsku->stack[KERNEL_STACK_SIZE-5] = function;
-  tsku->stack[KERNEL_STACK_SIZE-2] = stack;  
+  tsku->stack[KERNEL_STACK_SIZE-6] = function;
+  tsku->stack[KERNEL_STACK_SIZE-3] = stack;  
   
   list_add_tail(&tsk->list, &readyqueue);
   tsk->quantum = QUANTUM_DEFAULT;
@@ -251,20 +253,85 @@ int sys_get_stats(int pid, struct stats *st)
 
 int sys_sem_init(int n_sem, unsigned int value)
 {
+	int i;
+
+	if (n_sem < 0 || n_sem >= NR_SEMAPHORES)
+		return -EINVAL;
+
+	if (semaphores[n_sem].pid != -1)
+		return -EEXIST;
+
+	semaphores[n_sem].pid = sys_getpid();
+	semaphores[n_sem].cnt = value;
+	INIT_LIST_HEAD(&semaphores[n_sem].blocked);
+
 	return 0;
 }
 
 int sys_sem_wait(int n_sem)
 {
+	struct task_struct *cur;
+
+	if (n_sem < 0 || n_sem >= NR_SEMAPHORES)
+		return -EINVAL;
+
+	if (semaphores[n_sem].pid == -1)
+		return -EINVAL;
+
+	if (--semaphores[n_sem].cnt < 0) {
+		cur = current();
+		cur->process_state = ST_BLOCKED;
+
+		//list_del(&cur->list);
+		list_add_tail(&cur->list, &semaphores[n_sem].blocked);
+
+		sched_next();
+	}
+
 	return 0;
 }
 
 int sys_sem_signal(int n_sem)
 {
+	struct list_head *lh;
+	struct task_struct *tsk;
+	
+	if (n_sem < 0 || n_sem >= NR_SEMAPHORES)
+		return -EINVAL;
+
+	if (semaphores[n_sem].pid == -1)
+		return -EINVAL;
+
+	++semaphores[n_sem].cnt;
+
+	if (!list_empty(&semaphores[n_sem].blocked)) {
+		lh = list_first(&semaphores[n_sem].blocked);
+		tsk = list_head_to_task_struct(lh);
+		list_del(lh);
+
+		tsk->process_state = ST_READY;
+
+		list_add_tail(lh, &readyqueue);
+	}
+
 	return 0;
 }
 
 int sys_sem_destroy(int n_sem)
 {
+	if (n_sem < 0 || n_sem >= NR_SEMAPHORES)
+		return -EINVAL;
+
+	if (semaphores[n_sem].pid == -1)
+		return -EINVAL;
+
+	if (semaphores[n_sem].pid != sys_getpid())
+		return -EPERM;
+
+	if (!list_empty(&semaphores[n_sem].blocked))
+		return -EBUSY;
+
+	semaphores[n_sem].pid = -1;
+
 	return 0;
 }
