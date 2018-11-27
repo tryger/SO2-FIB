@@ -39,8 +39,15 @@ ENTRY(inner_task_switch)
 	call writeMSR
 
 	// set cr3 for using the page directory of the process
-	pushl 4(%esi)
+
+	movl 4(%esi), %eax
+	cmp 4(%ebx), %eax
+	je skip_change_baseAddr
+
+	pushl %eax // new->dir_page_baseAddr
 	call set_cr3
+
+skip_change_baseAddr:
 
 	// context switch
 	movl %ebp, 16(%ebx)

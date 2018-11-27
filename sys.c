@@ -154,11 +154,11 @@ int sys_clone(void (*function)(void), void *stack)
   tsk->PID = PID;
   ++dir_pages_used[ calculate_dir_index(get_DIR(tsk)) ];
 
-  tsku->stack[KERNEL_STACK_SIZE-18] = &ret_from_fork;
-  tsku->stack[KERNEL_STACK_SIZE-19] = 0;
-  tsk->kernel_esp = &tsku->stack[KERNEL_STACK_SIZE-19];
-  tsku->stack[KERNEL_STACK_SIZE-6] = function;
-  tsku->stack[KERNEL_STACK_SIZE-3] = stack;  
+  tsku->stack[KERNEL_STACK_SIZE-17] = &ret_from_fork;
+  tsku->stack[KERNEL_STACK_SIZE-18] = 0;
+  tsk->kernel_esp = &tsku->stack[KERNEL_STACK_SIZE-18];
+  tsku->stack[KERNEL_STACK_SIZE-5] = function;
+  tsku->stack[KERNEL_STACK_SIZE-2] = stack;  
   
   list_add_tail(&tsk->list, &readyqueue);
   tsk->quantum = QUANTUM_DEFAULT;
@@ -174,14 +174,20 @@ void sys_exit()
 {
   struct task_struct *cur = current();
   int dir_index = calculate_dir_index(get_DIR(cur));
+  int i;
   
   if (--dir_pages_used[dir_index] <= 0) {
   	free_user_pages(cur);
   }
 
-  list_add_tail(&cur->list, &freequeue);
+  for (i=0; i < NR_SEMAPHORES; i++) {
+  	if (semaphores[i].pid == cur->PID) {
+		sys_sem_destroy(i);
+	}
+  }
 
   cur->PID = -1;
+  list_add_tail(&cur->list, &freequeue);
 
   sched_next(); 
 }
@@ -281,6 +287,7 @@ int sys_sem_wait(int n_sem)
 	if (--semaphores[n_sem].cnt < 0) {
 		cur = current();
 		cur->process_state = ST_BLOCKED;
+		cur->sem_destroyed = 0;
 
 		//list_del(&cur->list);
 		list_add_tail(&cur->list, &semaphores[n_sem].blocked);
@@ -288,7 +295,11 @@ int sys_sem_wait(int n_sem)
 		sched_next();
 	}
 
-	return 0;
+	if (cur->sem_destroyed == 1) {
+		return -1;
+	} else {
+		return 0;
+	}
 }
 
 int sys_sem_signal(int n_sem)
@@ -319,6 +330,9 @@ int sys_sem_signal(int n_sem)
 
 int sys_sem_destroy(int n_sem)
 {
+	struct list_head *lh;
+	struct task_struct *tsk;
+
 	if (n_sem < 0 || n_sem >= NR_SEMAPHORES)
 		return -EINVAL;
 
@@ -331,6 +345,19 @@ int sys_sem_destroy(int n_sem)
 	if (!list_empty(&semaphores[n_sem].blocked))
 		return -EBUSY;
 
+	// Alliberem els processos bloquejats
+	while (!list_empty(&semaphores[n_sem].blocked)) {
+		lh = list_first(&semaphores[n_sem].blocked);
+		tsk = list_head_to_task_struct(lh);
+		list_del(lh);
+
+		tsk->process_state = ST_READY;
+		tsk->sem_destroyed = 1;
+
+
+		list_add_tail(lh, &readyqueue);
+	}
+	
 	semaphores[n_sem].pid = -1;
 
 	return 0;

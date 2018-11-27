@@ -124,9 +124,9 @@ void init_idle (void)
 	tsk->process_state = ST_READY;
 	init_stats(&tsk->p_stats);
 
-	tsku->stack[KERNEL_STACK_SIZE-1] = (unsigned long)&cpu_idle;
-	tsku->stack[KERNEL_STACK_SIZE-2] = 0;
-	tsku->task.kernel_esp = (unsigned long)&tsku->stack[KERNEL_STACK_SIZE-2];
+	tsku->stack[KERNEL_STACK_SIZE] = (unsigned long)&cpu_idle;
+	tsku->stack[KERNEL_STACK_SIZE-1] = 0;
+	tsku->task.kernel_esp = (unsigned long)&tsku->stack[KERNEL_STACK_SIZE-1];
 }
 void init_task1(void)
 {
@@ -148,7 +148,7 @@ void init_task1(void)
 	allocate_page_dir(tsk);
 	set_user_pages(tsk);
 
-	tss.esp0 = &tsku->stack[KERNEL_STACK_SIZE-1];
+	tss.esp0 = &tsku->stack[KERNEL_STACK_SIZE];
 	writeMSR(0x175, tss.esp0);
 
 	set_cr3(tsk->dir_pages_baseAddr);
