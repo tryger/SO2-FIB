@@ -1,9 +1,12 @@
 #include <io.h>
 #include <utils.h>
 #include <list.h>
+#include <devices.h>
 
 // Queue for blocked processes in I/O 
 struct list_head blocked;
+
+struct cbuffer keyboard_buffer;
 
 int sys_write_console(char *buffer,int size)
 {
@@ -13,4 +16,9 @@ int sys_write_console(char *buffer,int size)
     printc(buffer[i]);
   
   return size;
+}
+
+int sys_read_keyboard(char *buffer, int count)
+{
+	if ()
 }

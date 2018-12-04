@@ -54,7 +54,7 @@ int __attribute__ ((__section__(".text.main")))
 
   write(1, "HOLA\n", 5);*/
 
-  runjp(0,5);
+  runjp(6,6);
 
   while(1);
     return 0;

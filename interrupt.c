@@ -8,6 +8,7 @@
 #include <io.h>
 #include <entry.h>
 #include <system.h>
+#include <devices.h>
 
 #include <zeos_interrupt.h>
 
@@ -103,15 +104,19 @@ void setMsr()
 /* Rutinas excepcions/interrupcions */
 void keyboard_routine()
 {
-	unsigned char b, c;
+	unsigned char b, c, press;
 
 	b = inb(0x60);
 
-	if (b & 0x80) { // KEY PRESS
-		c = char_map[b & ~0x80];
+	c = char_map[b & 0x7f];
+	press = b & 80;
 
+	if (press) { // KEY PRESS
 		if (c == '\0')
 			c = 'C';
+
+		cb_write(&keyboard_buffer, &c, 1);
+
 
 		printc_xy(0, 0, c);
 	}

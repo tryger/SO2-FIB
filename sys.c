@@ -207,7 +207,7 @@ int sys_write(int fd, char* buffer, int size)
 	if (size < 0)
 		return -EINVAL;
 
-	if (access_ok(VERIFY_READ, buffer, size) == 0)
+	if (!access_ok(VERIFY_READ, buffer, size))
 		return -EACCES;
 
 
@@ -222,6 +222,30 @@ int sys_write(int fd, char* buffer, int size)
 	copy_from_user(buffer, buff, size);
 	ret += sys_write_console(buffer, size);
 
+
+	return ret;
+}
+
+int sys_read(int fd, char *buffer, int size)
+{
+	int ret;
+
+	if ((ret = check_fd(fd, LECTURA)))
+		return ret;
+
+	if (buffer == NULL)
+		return -EFAULT;
+
+	if (size < 0)
+		return -EINVAL;
+
+	if (!access_ok(VERIFY_READ, buffer, size))
+		return -EACCES;
+
+
+	ret = 0;
+
+	
 
 	return ret;
 }
@@ -265,7 +289,7 @@ int sys_sem_init(int n_sem, unsigned int value)
 		return -EINVAL;
 
 	if (semaphores[n_sem].pid != -1)
-		return -EEXIST;
+		return -EBUSY;
 
 	semaphores[n_sem].pid = sys_getpid();
 	semaphores[n_sem].cnt = value;
@@ -276,7 +300,7 @@ int sys_sem_init(int n_sem, unsigned int value)
 
 int sys_sem_wait(int n_sem)
 {
-	struct task_struct *cur;
+	struct task_struct *cur = current();
 
 	if (n_sem < 0 || n_sem >= NR_SEMAPHORES)
 		return -EINVAL;
@@ -285,7 +309,6 @@ int sys_sem_wait(int n_sem)
 		return -EINVAL;
 
 	if (--semaphores[n_sem].cnt < 0) {
-		cur = current();
 		cur->process_state = ST_BLOCKED;
 		cur->sem_destroyed = 0;
 
@@ -296,6 +319,7 @@ int sys_sem_wait(int n_sem)
 	}
 
 	if (cur->sem_destroyed == 1) {
+		cur->sem_destroyed = 0;
 		return -1;
 	} else {
 		return 0;
