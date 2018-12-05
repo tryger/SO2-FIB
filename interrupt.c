@@ -115,15 +115,11 @@ void keyboard_routine()
 		if (c == '\0')
 			c = 'C';
 
-		cb_write(&keyboard_buffer, &c, 1);
+		cb_write(&keyboard_buffer, c);
 
 
 		printc_xy(0, 0, c);
 	}
-
-	if (c == 'a') {
-		task_switch(&task[2]);
-  }
 }
 
 void clock_routine()

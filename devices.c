@@ -20,5 +20,5 @@ int sys_write_console(char *buffer,int size)
 
 int sys_read_keyboard(char *buffer, int count)
 {
-	if ()
+	
 }
