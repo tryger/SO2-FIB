@@ -109,14 +109,13 @@ void keyboard_routine()
 	b = inb(0x60);
 
 	c = char_map[b & 0x7f];
-	press = b & 80;
+	press = b & 0x80;
 
 	if (press) { // KEY PRESS
 		if (c == '\0')
 			c = 'C';
 
 		cb_write(&keyboard_buffer, c);
-
 
 		printc_xy(0, 0, c);
 	}
@@ -128,5 +127,5 @@ void clock_routine()
 
 	zeos_show_clock();
 
-  schedule();
+	schedule();
 }

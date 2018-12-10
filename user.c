@@ -54,9 +54,17 @@ int __attribute__ ((__section__(".text.main")))
 
   write(1, "HOLA\n", 5);*/
 
-  runjp(6,6);
+  //runjp(6,6);
+  //
+  char buf[100];
 
-  while(1);
+  read(0, buf, 2);
+
+  write(1, "LOL\n", 4);
+
+  write(1, buf, 2);
+
+  while(1) write(1, "4", 0);
     return 0;
 }
 

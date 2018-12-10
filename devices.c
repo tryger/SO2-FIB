@@ -20,5 +20,9 @@ int sys_write_console(char *buffer,int size)
 
 int sys_read_keyboard(char *buffer, int count)
 {
-	
+	int cnt;
+
+	while ( !(cnt = cb_read(&keyboard_buffer, buffer, count)) );
+
+	return cnt;
 }

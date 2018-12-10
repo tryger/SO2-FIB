@@ -26,9 +26,16 @@
 
 int check_fd(int fd, int permissions)
 {
-  if (fd!=1) return -EBADF;
-  if (permissions!=ESCRIPTURA) return -EACCES;
-  return 0;
+	if (fd != 0 && fd != 1)
+		return -EBADF;
+
+	if (fd == 0 && permissions != LECTURA)
+		return -EACCES;
+
+	if (fd == 1 && permissions != ESCRIPTURA)
+		return -EACCES;
+
+	return 0;
 }
 
 int sys_ni_syscall()
@@ -229,6 +236,7 @@ int sys_write(int fd, char* buffer, int size)
 int sys_read(int fd, char *buffer, int size)
 {
 	int ret;
+	char buff[20];
 
 	if ((ret = check_fd(fd, LECTURA)))
 		return ret;
@@ -243,9 +251,9 @@ int sys_read(int fd, char *buffer, int size)
 		return -EACCES;
 
 
-	ret = 0;
+	ret = sys_read_keyboard(buff, 2);
 
-	
+	copy_to_user(buff, buffer, ret);
 
 	return ret;
 }

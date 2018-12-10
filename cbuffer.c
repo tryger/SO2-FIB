@@ -31,8 +31,7 @@ int cb_read(struct cbuffer *cb, char *buffer, int count) {
 
 int cb_write(struct cbuffer *cb, char c) {
 	int i;
-	//if (cb->write_pointer == cb_previous(cb, cb->read_pointer))
-	if (cb->write_pointer == cb->read_pointer)
+	if (cb->write_pointer == cb_previous(cb, cb->read_pointer))
 		return 0;
 
 	*(cb->write_pointer) = c;

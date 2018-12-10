@@ -11,6 +11,7 @@
 #include <mm.h>
 #include <io.h>
 #include <utils.h>
+#include <devices.h>
 #include <zeos_mm.h> /* TO BE DELETED WHEN ADDED THE PROCESS MANAGEMENT CODE TO BECOME MULTIPROCESS */
 
 
@@ -102,8 +103,10 @@ int __attribute__((__section__(".text.main")))
 
   printk("Entering user mode...\n");
 
-  zeos_init_auxjp();
+  //zeos_init_auxjp();
   enable_int();
+
+  cb_init(&keyboard_buffer);
   /*
    * We return from a 'theorical' call to a 'call gate' to reduce our privileges
    * and going to execute 'magically' at 'usr_main'...

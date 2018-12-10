@@ -85,6 +85,55 @@ gettime_ret:
 	ret
 
 
+ENTRY(read)
+	pushl %ebp
+	movl %esp, %ebp
+
+	// Save edx and ecx
+	pushl %edx
+	pushl %ecx
+	pushl %ebx
+	pushl %esi
+
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl 16(%ebp), %edx
+
+	movl $3, %eax
+
+	// Save return address
+	leal read_ret, %esi
+	pushl %esi
+
+	// Prepare stack frame for the syscall
+	pushl %ebp
+	movl %esp, %ebp
+
+	sysenter
+read_ret:
+	movl %ebp, %esp
+	popl %ebp
+
+
+	test %eax, %eax
+	jns end_read
+	neg %eax
+	movl %eax, errno
+
+	movl $-1, %eax
+
+end_read:
+	popl %esi
+
+	popl %esi
+	popl %ebx
+	popl %ecx
+	popl %edx
+
+	movl %ebp, %esp
+	popl %ebp
+	ret
+
 
 ENTRY(getpid)
   pushl %ebp
