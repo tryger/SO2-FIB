@@ -40,8 +40,14 @@ ENTRY(inner_task_switch)
 
 	// set cr3 for using the page directory of the process
 
+	// If the process is a thread skip change cr3
 	movl 4(%esi), %eax
 	cmp 4(%ebx), %eax
+	je skip_change_baseAddr
+
+	// if process is idle_task, skip change cr3
+	leal idle_task, %eax
+	cmp %esi, (%eax)
 	je skip_change_baseAddr
 
 	pushl %eax // new->dir_page_baseAddr

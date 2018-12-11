@@ -105,6 +105,8 @@ void setMsr()
 void keyboard_routine()
 {
 	unsigned char b, c, press;
+	struct list_head *lh;
+	struct task_struct *cur, *tsk;
 
 	b = inb(0x60);
 
@@ -112,12 +114,25 @@ void keyboard_routine()
 	press = b & 0x80;
 
 	if (press) { // KEY PRESS
-		if (c == '\0')
-			c = 'C';
+		//if (c == '\0')
+		//	c = 'C';
 
 		cb_write(&keyboard_buffer, c);
 
-		printc_xy(0, 0, c);
+		if (!list_empty(&blocked)) {
+			/* Posem el proces bloquejat el primer de la readyqueue */
+			lh = list_first(&blocked);
+			tsk = list_head_to_task_struct(lh);
+			list_del(lh);
+			tsk->process_state = ST_READY;
+			list_add(&tsk->list, &readyqueue);
+
+			/* El proces actual el posem al final de la readyqueue */
+			update_process_state(current(), &readyqueue);
+
+			/* Executem el proces bloquejat */
+			sched_next();
+		}
 	}
 }
 

@@ -123,10 +123,14 @@ void init_idle (void)
 	tsk->quantum = QUANTUM_DEFAULT;
 	tsk->process_state = ST_READY;
 	init_stats(&tsk->p_stats);
+	
+	//allocate_page_dir(tsk);
 
-	tsku->stack[KERNEL_STACK_SIZE] = (unsigned long)&cpu_idle;
-	tsku->stack[KERNEL_STACK_SIZE-1] = 0;
-	tsku->task.kernel_esp = (unsigned long)&tsku->stack[KERNEL_STACK_SIZE-1];
+	tsku->stack[KERNEL_STACK_SIZE-1] = (unsigned long)&cpu_idle;
+	tsku->stack[KERNEL_STACK_SIZE-2] = 0;
+	tsku->task.kernel_esp = (unsigned long)&tsku->stack[KERNEL_STACK_SIZE-2];
+
+	idle_task = tsk;
 }
 void init_task1(void)
 {
