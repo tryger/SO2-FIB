@@ -19,7 +19,7 @@ int sys_write_console(char *buffer,int size)
   return size;
 }
 
-int sys_read_keyboard(char *buffer, int count)
+int sys_read_keyboard(char *buffer, int size)
 {
 	int cnt = 0;
 	struct task_struct *cur = current();
@@ -29,12 +29,16 @@ int sys_read_keyboard(char *buffer, int count)
 		sched_next();
 	}
 
-	while (cnt < count) {
-		cnt += cb_read(&keyboard_buffer, buffer, count);
+	while (1) {
+		cnt += cb_read(&keyboard_buffer, buffer+cnt, size);
 
-		cur->process_state = ST_BLOCKED;
-		list_add(&cur->list, &blocked);
-		sched_next();
+		if (cnt == size) {
+			break;
+		} else {
+			cur->process_state = ST_BLOCKED;
+			list_add(&cur->list, &blocked);
+			sched_next();
+		}
 	}
 
 	return cnt;

@@ -1,7 +1,7 @@
 #ifndef _CIRCULAR_BUFFER_H
 #define _CIRCULAR_BUFFER_H
 
-#define BUFFER_SIZE 4
+#define BUFFER_SIZE 128
 
 struct cbuffer {
 	char first[BUFFER_SIZE];

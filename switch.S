@@ -50,7 +50,7 @@ ENTRY(inner_task_switch)
 	cmp %esi, (%eax)
 	je skip_change_baseAddr
 
-	pushl %eax // new->dir_page_baseAddr
+	pushl 4(%esi) // new->dir_page_baseAddr
 	call set_cr3
 
 skip_change_baseAddr:

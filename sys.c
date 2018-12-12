@@ -30,10 +30,10 @@ int check_fd(int fd, int permissions)
 		return -EBADF;
 
 	if (fd == 0 && permissions != LECTURA)
-		return -EACCES;
+		return -EBADF;
 
 	if (fd == 1 && permissions != ESCRIPTURA)
-		return -EACCES;
+		return -EBADF;
 
 	return 0;
 }
@@ -229,14 +229,13 @@ int sys_write(int fd, char* buffer, int size)
 	copy_from_user(buffer, buff, size);
 	ret += sys_write_console(buffer, size);
 
-
 	return ret;
 }
 
 int sys_read(int fd, char *buffer, int size)
 {
 	int ret;
-	char buff[20];
+	char buff[256];
 
 	if ((ret = check_fd(fd, LECTURA)))
 		return ret;
@@ -248,12 +247,18 @@ int sys_read(int fd, char *buffer, int size)
 		return -EINVAL;
 
 	if (!access_ok(VERIFY_READ, buffer, size))
-		return -EACCES;
+		return -EFAULT;
 
-
-	ret = sys_read_keyboard(buff, 2);
-
-	copy_to_user(buff, buffer, ret);
+	ret = 0;
+	while (size > 256) {
+		ret += sys_read_keyboard(buff, 256);
+		copy_to_user(buff, buffer, 256);
+		buffer += 256;
+		size -= 256;
+	}
+		
+	ret += sys_read_keyboard(buff, size);
+	copy_to_user(buff, buffer, size);
 
 	return ret;
 }
